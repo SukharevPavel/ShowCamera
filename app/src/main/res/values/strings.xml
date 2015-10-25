@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ShowCamera</string>
+    <string name="no_camera_found">Камера не найдена!</string>
+</resources>
