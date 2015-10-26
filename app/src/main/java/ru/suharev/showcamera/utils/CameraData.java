@@ -2,12 +2,17 @@ package ru.suharev.showcamera.utils;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -31,6 +36,8 @@ public class CameraData {
     private Context mContext;
     private CameraManager mCameraManager;
     private CameraDevice mCameraDevice;
+    private Size mPreviewSize = null;
+    CaptureRequest.Builder mPreviewRequestBuilder;
 
     private Camera mCamera;
 
@@ -88,13 +95,39 @@ public class CameraData {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void showVideoLollipop(int cameraId, SurfaceHolder holder) {
-        showVideoOld(cameraId, holder);
+    private void showVideoLollipop(int cameraId, final SurfaceHolder holder) {
         try {
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraIds.get(cameraId));
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            mPreviewSize = map.getOutputSizes(SurfaceTexture.class)[0];
             mCameraManager.openCamera(mCameraIds.get(cameraId), new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(CameraDevice camera) {
                     mCameraDevice = camera;
+                    try {
+                        mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                        List<Surface> surface = Collections.singletonList(holder.getSurface());
+                        mPreviewRequestBuilder.addTarget(holder.getSurface());
+                        mCameraDevice.createCaptureSession(surface, new CameraCaptureSession.StateCallback() {
+                            @Override
+                            public void onConfigured(CameraCaptureSession session) {
+                                CaptureRequest mPreviewRequest = mPreviewRequestBuilder.build();
+                                try {
+                                    session.setRepeatingRequest(mPreviewRequest,
+                                            null, null);
+                                } catch (CameraAccessException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            @Override
+                            public void onConfigureFailed(CameraCaptureSession session) {
+
+                            }
+                        }, null);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -109,18 +142,7 @@ public class CameraData {
                             Toast.LENGTH_LONG).show();
                 }
             }, null);
-            List<Surface> surface = Collections.singletonList(holder.getSurface());
-            mCameraDevice.createCaptureSession(surface, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
 
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-
-                }
-            }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }

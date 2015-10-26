@@ -1,7 +1,19 @@
 package ru.suharev.showcamera.ui;
 
+import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
+import android.support.annotation.NonNull;
+import android.app.ListFragment;
+import android.support.v4.app.ActivityCompat;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
@@ -20,6 +32,8 @@ public class CameraActivityFragment extends ListFragment {
     public static final int CAMERA_DISABLED = -1;
     public static final String EXTRA_CAMERA_NUMBER = "camera_number";
 
+    private static final int REQUEST_CAMERA_PERMISSION = 1;
+    private static final String FRAGMENT_DIALOG = "dialog";
 
     private CameraData mCameraData;
     private SurfaceView mSurfaceView;
@@ -54,6 +68,13 @@ public class CameraActivityFragment extends ListFragment {
                 mCameraData.showVideo(mCurrentCamera, mSurfaceView);
             }
         }
+
+        if (getActivity().checkSelfPermission(Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestCameraPermission();
+            return;
+        }
+
         setAdapter();
     }
 
@@ -88,7 +109,51 @@ public class CameraActivityFragment extends ListFragment {
         if (mCurrentCamera != CAMERA_DISABLED) mCameraData.hideVideo();
     }
 
+    private void requestCameraPermission() {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA},
+                    REQUEST_CAMERA_PERMISSION);
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                ErrorDialog.newInstance(getString(R.string.request_permission))
+                        .show(getFragmentManager(), FRAGMENT_DIALOG);
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    public static class ErrorDialog extends DialogFragment {
+
+        private static final String ARG_MESSAGE = "message";
+
+        public static ErrorDialog newInstance(String message) {
+            ErrorDialog dialog = new ErrorDialog();
+            Bundle args = new Bundle();
+            args.putString(ARG_MESSAGE, message);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final Activity activity = getActivity();
+            return new AlertDialog.Builder(activity)
+                    .setMessage(getArguments().getString(ARG_MESSAGE))
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            activity.finish();
+                        }
+                    })
+                    .create();
+        }
+
+    }
 
 
 }

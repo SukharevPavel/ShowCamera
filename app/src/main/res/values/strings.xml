@@ -3,4 +3,6 @@
     <string name="no_camera_found">Камера не найдена!</string>
     <string name="toast_error_camera">Ошибка при работе с камерой</string>
     <string name="camera_sugar">Камера: </string>
+
+    <string name="request_permission">This sample needs camera permission.</string>
 </resources>
