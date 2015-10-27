@@ -34,11 +34,20 @@ public class CameraData {
     private List<String> mCameraIds;
     private List<String> mCameraSugarIds;
     private Context mContext;
+
+    /*
+    * Camera2 API variables
+     */
     private CameraManager mCameraManager;
     private CameraDevice mCameraDevice;
-    private Size mPreviewSize = null;
+    private CameraCaptureSession mCaptureSession;
+    private Surface mSurface;
     CaptureRequest.Builder mPreviewRequestBuilder;
 
+
+    /*
+    * Camera api
+     */
     private Camera mCamera;
 
     public CameraData(Context ctx) {
@@ -97,23 +106,22 @@ public class CameraData {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void showVideoLollipop(int cameraId, final SurfaceHolder holder) {
         try {
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraIds.get(cameraId));
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            mPreviewSize = map.getOutputSizes(SurfaceTexture.class)[0];
             mCameraManager.openCamera(mCameraIds.get(cameraId), new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(CameraDevice camera) {
                     mCameraDevice = camera;
                     try {
+                        mSurface = holder.getSurface();
                         mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                        List<Surface> surface = Collections.singletonList(holder.getSurface());
-                        mPreviewRequestBuilder.addTarget(holder.getSurface());
+                        List<Surface> surface = Collections.singletonList(mSurface);
+                        mPreviewRequestBuilder.addTarget(mSurface);
                         mCameraDevice.createCaptureSession(surface, new CameraCaptureSession.StateCallback() {
                             @Override
                             public void onConfigured(CameraCaptureSession session) {
+                                mCaptureSession = session;
                                 CaptureRequest mPreviewRequest = mPreviewRequestBuilder.build();
                                 try {
-                                    session.setRepeatingRequest(mPreviewRequest,
+                                    mCaptureSession.setRepeatingRequest(mPreviewRequest,
                                             null, null);
                                 } catch (CameraAccessException e) {
                                     e.printStackTrace();
@@ -151,7 +159,7 @@ public class CameraData {
     private void showVideoOld(int cameraId, SurfaceHolder holder) {
         hideVideo();
         try {
-            mCamera = Camera.open();
+            mCamera = Camera.open(cameraId);
         } catch (Exception e) {
             Toast.makeText(mContext, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
             return;
@@ -178,12 +186,24 @@ public class CameraData {
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
-
         }
     }
 
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void hideVideoLollipop() {
-        hideVideoOld();
+        if (mCaptureSession != null) {
+            mCaptureSession.close();
+            mCaptureSession = null;
+        }
+        if (mCameraDevice != null) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+        if (mSurface != null) {
+            mSurface.release();
+            mSurface = null;
+        }
     }
 
 }

@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.app.ListFragment;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
@@ -44,12 +45,6 @@ public class CameraActivityFragment extends ListFragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        setRetainInstance(true);
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_camera, container, false);
@@ -59,14 +54,20 @@ public class CameraActivityFragment extends ListFragment {
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+        if (mSurfaceView.getHolder().isCreating()) Log.i("camera", "still creating, too fast!");
+        else if (mCurrentCamera != CAMERA_DISABLED) {
+            mCameraData.showVideo(mCurrentCamera, mSurfaceView);
+        }
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (savedInstanceState != null &&
                 savedInstanceState.containsKey(EXTRA_CAMERA_NUMBER)) {
             mCurrentCamera = savedInstanceState.getInt(EXTRA_CAMERA_NUMBER);
-            if (mCurrentCamera != CAMERA_DISABLED) {
-                mCameraData.showVideo(mCurrentCamera, mSurfaceView);
-            }
         }
 
         if (getActivity().checkSelfPermission(Manifest.permission.CAMERA)
@@ -80,7 +81,7 @@ public class CameraActivityFragment extends ListFragment {
 
     private void setAdapter() {
         mAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_list_item_1,
+                R.layout.simple_list_item_cut_width,
                 mCameraData.getCameraIds());
         getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -104,9 +105,9 @@ public class CameraActivityFragment extends ListFragment {
     }
 
     @Override
-    public void onDetach() {
-        super.onDetach();
+    public void onPause() {
         if (mCurrentCamera != CAMERA_DISABLED) mCameraData.hideVideo();
+        super.onPause();
     }
 
     private void requestCameraPermission() {
