@@ -14,8 +14,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.app.ListFragment;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +44,7 @@ public class CameraActivityFragment extends ListFragment {
     public CameraActivityFragment() {
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -53,14 +54,6 @@ public class CameraActivityFragment extends ListFragment {
         return v;
     }
 
-    @Override
-    public void onResume(){
-        super.onResume();
-        if (mSurfaceView.getHolder().isCreating()) Log.i("camera", "still creating, too fast!");
-        else if (mCurrentCamera != CAMERA_DISABLED) {
-            mCameraData.showVideo(mCurrentCamera, mSurfaceView);
-        }
-    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -68,6 +61,9 @@ public class CameraActivityFragment extends ListFragment {
         if (savedInstanceState != null &&
                 savedInstanceState.containsKey(EXTRA_CAMERA_NUMBER)) {
             mCurrentCamera = savedInstanceState.getInt(EXTRA_CAMERA_NUMBER);
+            if (mCurrentCamera != CAMERA_DISABLED) {
+                mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
+            }
         }
 
         if (getActivity().checkSelfPermission(Manifest.permission.CAMERA)
@@ -156,5 +152,21 @@ public class CameraActivityFragment extends ListFragment {
 
     }
 
+    final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            mCameraData.showVideo(0, mSurfaceView);
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+
+        }
+    };
 
 }

@@ -105,6 +105,7 @@ public class CameraData {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void showVideoLollipop(int cameraId, final SurfaceHolder holder) {
+        hideVideo();
         try {
             mCameraManager.openCamera(mCameraIds.get(cameraId), new CameraDevice.StateCallback() {
                 @Override
@@ -140,7 +141,9 @@ public class CameraData {
 
                 @Override
                 public void onDisconnected(CameraDevice camera) {
-
+                    camera.close();
+                    mCaptureSession = null;
+                    mCameraDevice = null;
                 }
 
                 @Override
@@ -148,6 +151,8 @@ public class CameraData {
                     Toast.makeText(mContext,
                             mContext.getResources().getString(R.string.toast_error_camera),
                             Toast.LENGTH_LONG).show();
+                    camera.close();
+                    mCameraDevice = null;
                 }
             }, null);
 
@@ -157,7 +162,6 @@ public class CameraData {
     }
 
     private void showVideoOld(int cameraId, SurfaceHolder holder) {
-        hideVideo();
         try {
             mCamera = Camera.open(cameraId);
         } catch (Exception e) {
