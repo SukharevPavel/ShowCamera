@@ -1,16 +1,7 @@
 package ru.suharev.showcamera.ui;
 
-import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.ListFragment;
-import android.content.DialogInterface;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -18,6 +9,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ru.suharev.showcamera.R;
 import ru.suharev.showcamera.utils.CameraData;
@@ -30,14 +24,12 @@ public class CameraActivityFragment extends ListFragment {
     public static final int CAMERA_DISABLED = -1;
     public static final String EXTRA_CAMERA_NUMBER = "camera_number";
 
-    private static final int REQUEST_CAMERA_PERMISSION = 1;
-    private static final String FRAGMENT_DIALOG = "dialog";
 
     private CameraData mCameraData;
     private SurfaceView mSurfaceView;
     private ArrayAdapter<String> mAdapter;
     private int mCurrentCamera = CAMERA_DISABLED;
-    final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
+    private final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
 
@@ -64,7 +56,7 @@ public class CameraActivityFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_camera, container, false);
-        mCameraData = new CameraData(getContext());
+        mCameraData = new CameraData(getActivity());
         mSurfaceView = (SurfaceView) v.findViewById(R.id.video_view);
         return v;
     }
@@ -75,22 +67,17 @@ public class CameraActivityFragment extends ListFragment {
         if (savedInstanceState != null &&
                 savedInstanceState.containsKey(EXTRA_CAMERA_NUMBER)) {
             mCurrentCamera = savedInstanceState.getInt(EXTRA_CAMERA_NUMBER);
-            mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
-        }
 
-        if (getActivity().checkSelfPermission(Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestCameraPermission();
-            return;
+
         }
 
         setAdapter();
     }
 
-    private void setAdapter() {
-        mAdapter = new ArrayAdapter<>(getContext(),
+    public void setAdapter() {
+        mAdapter = new ArrayAdapter<>(getActivity(),
                 R.layout.simple_list_item_cut_width,
-                mCameraData.getCameraIds());
+                addSugar(mCameraData.getCameraIds()));
         getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -104,6 +91,15 @@ public class CameraActivityFragment extends ListFragment {
             }
         });
         setListAdapter(mAdapter);
+        mAdapter.notifyDataSetChanged();
+    }
+
+    private List<String> addSugar(List<String> input) {
+        List<String> result = new ArrayList<>();
+        for (String element : input) {
+            result.add(getResources().getString(R.string.camera_sugar).concat(element));
+        }
+        return result;
     }
 
     @Override
@@ -113,55 +109,22 @@ public class CameraActivityFragment extends ListFragment {
     }
 
     @Override
-    public void onPause() {
-        if (mCurrentCamera != CAMERA_DISABLED) mCameraData.hideVideo();
-        super.onPause();
-    }
-
-    private void requestCameraPermission() {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA},
-                    REQUEST_CAMERA_PERMISSION);
+    public void onResume() {
+        super.onResume();
+        mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
+        if (mSurfaceView.getHolder().getSurface().isValid()) {
+            if (mCurrentCamera != CAMERA_DISABLED) {
+                mCameraData.showVideo(mCurrentCamera, mSurfaceView);
+            }
+        }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                ErrorDialog.newInstance(getString(R.string.request_permission))
-                        .show(getFragmentManager(), FRAGMENT_DIALOG);
-            }
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
+    public void onPause() {
+        if (mCurrentCamera != CAMERA_DISABLED) mCameraData.hideVideo();
+        mSurfaceView.getHolder().removeCallback(mSurfaceHolderCallback);
+        super.onPause();
     }
 
-    public static class ErrorDialog extends DialogFragment {
-
-        private static final String ARG_MESSAGE = "message";
-
-        public static ErrorDialog newInstance(String message) {
-            ErrorDialog dialog = new ErrorDialog();
-            Bundle args = new Bundle();
-            args.putString(ARG_MESSAGE, message);
-            dialog.setArguments(args);
-            return dialog;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Activity activity = getActivity();
-            return new AlertDialog.Builder(activity)
-                    .setMessage(getArguments().getString(ARG_MESSAGE))
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            activity.finish();
-                        }
-                    })
-                    .create();
-        }
-
-    }
 
 }
