@@ -2,17 +2,13 @@ package ru.suharev.showcamera.utils;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
-import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -31,10 +27,10 @@ import ru.suharev.showcamera.R;
  */
 public class CameraData {
 
+    CaptureRequest.Builder mPreviewRequestBuilder;
     private List<String> mCameraIds;
     private List<String> mCameraSugarIds;
     private Context mContext;
-
     /*
     * Camera2 API variables
      */
@@ -42,9 +38,6 @@ public class CameraData {
     private CameraDevice mCameraDevice;
     private CameraCaptureSession mCaptureSession;
     private Surface mSurface;
-    CaptureRequest.Builder mPreviewRequestBuilder;
-
-
     /*
     * Camera api
      */
@@ -203,10 +196,6 @@ public class CameraData {
         if (mCameraDevice != null) {
             mCameraDevice.close();
             mCameraDevice = null;
-        }
-        if (mSurface != null) {
-            mSurface.release();
-            mSurface = null;
         }
     }
 

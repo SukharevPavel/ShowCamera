@@ -1,18 +1,15 @@
 package ru.suharev.showcamera.ui;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.app.Fragment;
+import android.app.ListFragment;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.app.ListFragment;
 import android.support.v4.app.ActivityCompat;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -40,10 +37,28 @@ public class CameraActivityFragment extends ListFragment {
     private SurfaceView mSurfaceView;
     private ArrayAdapter<String> mAdapter;
     private int mCurrentCamera = CAMERA_DISABLED;
+    final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            if (mCurrentCamera != CAMERA_DISABLED) {
+                mCameraData.showVideo(mCurrentCamera, mSurfaceView);
+            }
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+
+        }
+    };
+
 
     public CameraActivityFragment() {
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -54,16 +69,13 @@ public class CameraActivityFragment extends ListFragment {
         return v;
     }
 
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         if (savedInstanceState != null &&
                 savedInstanceState.containsKey(EXTRA_CAMERA_NUMBER)) {
             mCurrentCamera = savedInstanceState.getInt(EXTRA_CAMERA_NUMBER);
-            if (mCurrentCamera != CAMERA_DISABLED) {
-                mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
-            }
+            mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
         }
 
         if (getActivity().checkSelfPermission(Manifest.permission.CAMERA)
@@ -151,22 +163,5 @@ public class CameraActivityFragment extends ListFragment {
         }
 
     }
-
-    final SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            mCameraData.showVideo(0, mSurfaceView);
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-
-        }
-    };
 
 }
