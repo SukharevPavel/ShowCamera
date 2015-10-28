@@ -51,6 +51,9 @@ public class Camera2Data {
         return cameraIds;
     }
 
+    //T0D0 если в ландскэйпе попытаться залочить экран, а потом разлочить, то, похоже, несколько раз
+    // асинхронно срабатывают hide-show и в итоге setRepeatingRequest вызывается при мёртвом
+    //mCameraDevice
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void showVideoLollipop(int cameraId, final SurfaceHolder holder) {
         hideVideoLollipop();

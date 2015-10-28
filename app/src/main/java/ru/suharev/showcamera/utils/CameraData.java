@@ -66,6 +66,7 @@ public class CameraData {
 
 
     private void showVideoOld(int cameraId, SurfaceHolder holder) {
+        hideVideo();
         try {
             mCamera = Camera.open(cameraId);
         } catch (Exception e) {
